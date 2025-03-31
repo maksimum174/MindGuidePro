@@ -1,6 +1,6 @@
 import logging
-from telegram import Update
-from telegram.ext import CallbackContext
+from telegram import Update, constants
+from telegram.ext import ContextTypes
 from gemini_client import get_gemini_response, get_initial_chat
 from logger import log_interaction
 
@@ -10,19 +10,19 @@ logger = logging.getLogger(__name__)
 # Define the key for storing chat history in context.user_data
 CHAT_SESSION_KEY = "chat_session"
 
-def reset_conversation(context: CallbackContext) -> None:
+def reset_conversation(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Reset the conversation context."""
     if context.user_data and CHAT_SESSION_KEY in context.user_data:
         del context.user_data[CHAT_SESSION_KEY]
 
-def get_chat_session(context: CallbackContext):
+def get_chat_session(context: ContextTypes.DEFAULT_TYPE):
     """Get or create a chat session for the user."""
     if CHAT_SESSION_KEY not in context.user_data:
         context.user_data[CHAT_SESSION_KEY] = get_initial_chat()
     
     return context.user_data[CHAT_SESSION_KEY]
 
-async def handle_message(update: Update, context: CallbackContext) -> int:
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle user messages and generate responses using Gemini API."""
     user_message = update.message.text
     user_id = update.effective_user.id
@@ -34,7 +34,7 @@ async def handle_message(update: Update, context: CallbackContext) -> int:
     chat_session = get_chat_session(context)
     
     # Show typing indicator
-    await update.message.chat.send_action("typing")
+    await update.message.chat.send_chat_action(constants.ChatAction.TYPING)
     
     # Get response from Gemini
     response = get_gemini_response(chat_session, user_message)

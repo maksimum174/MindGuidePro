@@ -10,6 +10,5 @@ dependencies = [
     "google-generativeai>=0.8.4",
     "gunicorn>=23.0.0",
     "psycopg2-binary>=2.9.10",
-    "telegram>=0.0.1",
-    "tlgbotfwk>=0.4.61",
+    "python-telegram-bot[job-queue]>=22.0",
 ]

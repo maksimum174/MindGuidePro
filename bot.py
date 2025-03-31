@@ -1,14 +1,14 @@
 import os
 import logging
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
     filters,
-    CallbackContext,
+    ContextTypes,
     ConversationHandler,
 )
+from telegram import Update
 from conversation_handler import handle_message, reset_conversation
 from config import TELEGRAM_TOKEN
 from logger import log_interaction
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Define states
 CHAT = 0
 
-async def start(update: Update, context: CallbackContext) -> int:
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Send a welcome message when the /start command is issued."""
     user = update.effective_user
     
@@ -42,7 +42,7 @@ async def start(update: Update, context: CallbackContext) -> int:
     
     return CHAT
 
-async def help_command(update: Update, context: CallbackContext) -> int:
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Send a help message when the command /help is issued."""
     await update.message.reply_text(
         "🤝 Я здесь, чтобы помочь Вам:\n\n"
@@ -65,7 +65,7 @@ async def help_command(update: Update, context: CallbackContext) -> int:
     
     return CHAT
 
-async def reset_command(update: Update, context: CallbackContext) -> int:
+async def reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Reset the conversation context."""
     reset_conversation(context)
     
@@ -80,7 +80,7 @@ async def reset_command(update: Update, context: CallbackContext) -> int:
     
     return CHAT
 
-def create_bot() -> Application:
+async def create_bot() -> Application:
     """Create and configure the application."""
     # Create the Application using the bot token
     application = Application.builder().token(TELEGRAM_TOKEN).build()
@@ -104,8 +104,14 @@ def create_bot() -> Application:
 
     return application
 
-def start_bot(application: Application) -> None:
+async def start_bot(application: Application) -> None:
     """Start the bot."""
-    # Run the bot until the user presses Ctrl-C
-    application.run_polling()
+    # Start the Bot
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling()
     logger.info("Bot started")
+    
+    # Run the bot until the user presses Ctrl-C
+    await application.updater.stop()
+    await application.stop()
