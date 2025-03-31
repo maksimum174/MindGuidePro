@@ -1,0 +1,34 @@
+{
+  "name": "Психологический бот",
+  "description": "Telegram-бот психологической поддержки на базе Gemini AI, оптимизированный для русскоязычной аудитории.",
+  "keywords": [
+    "python",
+    "telegram",
+    "bot",
+    "gemini",
+    "ai",
+    "psychology"
+  ],
+  "repository": "https://github.com/your-username/psychology-bot",
+  "env": {
+    "TELEGRAM_TOKEN": {
+      "description": "Токен вашего Telegram бота, полученный от @BotFather",
+      "required": true
+    },
+    "GEMINI_API_KEY": {
+      "description": "API ключ для доступа к сервисам Gemini AI",
+      "required": true
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  }
+}

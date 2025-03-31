@@ -13,5 +13,6 @@ dependencies = [
     "pytelegrambotapi==4.16.1",
     "python-telegram-bot[ext]==20.6",
     "setuptools>=78.1.0",
+    "sift-stack-py>=0.4.2",
     "telegram>=0.0.1",
 ]
