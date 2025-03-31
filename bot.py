@@ -8,6 +8,7 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
 )
+from telegram.constants import ChatAction
 from telegram import Update
 from conversation_handler import handle_message, reset_conversation
 from config import TELEGRAM_TOKEN
@@ -109,9 +110,15 @@ async def start_bot(application: Application) -> None:
     # Start the Bot
     await application.initialize()
     await application.start()
-    await application.updater.start_polling()
+    await application.updater.start_polling(allowed_updates=Update.ALL_TYPES)
     logger.info("Bot started")
     
-    # Run the bot until the user presses Ctrl-C
-    await application.updater.stop()
-    await application.stop()
+    try:
+        # Keep the application running
+        await application.updater.stop()
+        await application.stop()
+    except (KeyboardInterrupt, SystemExit):
+        # On exit, gracefully stop the application
+        await application.updater.stop()
+        await application.stop()
+        logger.info("Bot stopped")

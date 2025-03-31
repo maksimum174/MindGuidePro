@@ -1,5 +1,6 @@
 import logging
-from telegram import Update, constants
+from telegram import Update
+from telegram.constants import ChatAction
 from telegram.ext import ContextTypes
 from gemini_client import get_gemini_response, get_initial_chat
 from logger import log_interaction
@@ -34,7 +35,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     chat_session = get_chat_session(context)
     
     # Show typing indicator
-    await update.message.chat.send_chat_action(constants.ChatAction.TYPING)
+    await update.message.chat.send_action(ChatAction.TYPING)
     
     # Get response from Gemini
     response = get_gemini_response(chat_session, user_message)

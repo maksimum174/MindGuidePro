@@ -1,14 +1,19 @@
+"""Утилиты для работы с ботом."""
+
 import re
 import time
 from datetime import datetime
 
 def sanitize_text(text):
     """Remove any potentially harmful content from text."""
-    # Basic sanitization to prevent injection issues
-    if text:
-        # Remove any control characters
-        text = re.sub(r'[\x00-\x1F\x7F]', '', text)
-    return text
+    if not text:
+        return ""
+    
+    # Убираем потенциально опасные HTML-теги
+    sanitized = re.sub(r'<(script|iframe|object|embed|form|style|meta|link)', 
+                       r'&lt;\1', text, flags=re.IGNORECASE)
+    
+    return sanitized
 
 def get_timestamp():
     """Get the current timestamp in a human-readable format."""
@@ -19,10 +24,12 @@ def format_time_elapsed(start_time):
     elapsed = time.time() - start_time
     
     if elapsed < 60:
-        return f"{elapsed:.1f} секунд"
+        return f"{int(elapsed)} секунд"
     elif elapsed < 3600:
-        minutes = elapsed / 60
-        return f"{minutes:.1f} минут"
+        minutes = int(elapsed / 60)
+        seconds = int(elapsed % 60)
+        return f"{minutes} минут {seconds} секунд"
     else:
-        hours = elapsed / 3600
-        return f"{hours:.1f} часов"
+        hours = int(elapsed / 3600)
+        minutes = int((elapsed % 3600) / 60)
+        return f"{hours} часов {minutes} минут"

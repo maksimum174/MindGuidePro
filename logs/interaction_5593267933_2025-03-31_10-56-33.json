@@ -1,0 +1,7 @@
+{
+    "timestamp": "2025-03-31 10:56:33",
+    "user_id": 5593267933,
+    "type": "error",
+    "user_message": "в чем смысл жизни?",
+    "bot_response": "404 models/gemini-pro is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods."
+}
