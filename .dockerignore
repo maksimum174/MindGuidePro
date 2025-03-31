@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+
+# Временные файлы Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Файлы виртуального окружения
+venv/
+ENV/
+
+# Файлы логов
+logs/
+*.log
+
+# Среды разработки
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Файлы документации и инструкций
+*.md
+DEPLOY_*.md
+
+# Файлы настроек для других платформ
+app.json
+Procfile
+runtime.txt
+requirements-heroku.txt
