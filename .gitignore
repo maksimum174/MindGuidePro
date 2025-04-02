@@ -20,11 +20,15 @@ var/
 .installed.cfg
 *.egg
 
-# Файлы виртуального окружения
+# Виртуальные окружения
 venv/
 ENV/
 
-# Файлы логов
+# Файлы с окружением и секретами
+.env
+.env.local
+
+# Логи
 logs/
 *.log
 
@@ -33,3 +37,9 @@ logs/
 .vscode/
 *.swp
 *.swo
+
+# Replit-специфичные файлы
+.replit
+replit.nix
+.upm/
+.cache/
