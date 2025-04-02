@@ -2,6 +2,10 @@
 
 import os
 import logging
+from dotenv import load_dotenv
+
+# Загрузка переменных окружения из файла .env
+load_dotenv()
 
 # Токен Telegram бота
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
