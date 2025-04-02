@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки - Бесплатный ИИ-Психолог 24/7{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Панель управления</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Настройки</li>
+            </ol>
+        </nav>
+        <h1 class="mb-4">Настройки бота</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-sliders"></i> Общие настройки
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('settings') }}" method="post" class="needs-validation" novalidate>
+                    <input type="hidden" name="form_type" value="general">
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i> Редактирование этих настроек будет доступно в следующей версии.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="bot_name" class="form-label">Имя бота</label>
+                        <input type="text" class="form-control" id="bot_name" name="bot_name" value="Бесплатный ИИ-Психолог 24/7" disabled>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="model_name" class="form-label">Модель ИИ</label>
+                        <select class="form-select" id="model_name" name="model_name" disabled>
+                            <option value="gemini-1.5-pro" selected>Gemini 1.5 Pro</option>
+                            <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="log_level" class="form-label">Уровень логирования</label>
+                        <select class="form-select" id="log_level" name="log_level" disabled>
+                            <option value="debug">Debug</option>
+                            <option value="info" selected>Info</option>
+                            <option value="warning">Warning</option>
+                            <option value="error">Error</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" disabled>Сохранить изменения</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-key"></i> API ключи
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('settings') }}" method="post" class="needs-validation" novalidate>
+                    <input type="hidden" name="form_type" value="api_keys">
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Редактирование API ключей рекомендуется выполнять через файл .env
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="telegram_token" class="form-label">Токен Telegram API</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="telegram_token" name="telegram_token" value="•••••••••••" disabled>
+                            <button class="btn btn-outline-secondary" type="button" disabled>
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="gemini_api_key" class="form-label">Ключ Gemini API</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="gemini_api_key" name="gemini_api_key" value="•••••••••••" disabled>
+                            <button class="btn btn-outline-secondary" type="button" disabled>
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" disabled>Сохранить изменения</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-square-text"></i> Настройки промптов
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('settings') }}" method="post" class="needs-validation" novalidate>
+                    <input type="hidden" name="form_type" value="prompts">
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i> Редактирование системных промптов будет доступно в следующей версии.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="system_prompt" class="form-label">Системный промпт</label>
+                        <textarea class="form-control" id="system_prompt" name="system_prompt" rows="5" disabled>Ты — опытный гештальт-терапевт с большим опытом и знаниями нейро-лингвистического программирования (НЛП)...</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="welcome_message" class="form-label">Приветственное сообщение</label>
+                        <textarea class="form-control" id="welcome_message" name="welcome_message" rows="3" disabled>Здравствуйте! Я ваш виртуальный психолог, работающий в подходе гештальт-терапии...</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="help_message" class="form-label">Сообщение справки</label>
+                        <textarea class="form-control" id="help_message" name="help_message" rows="3" disabled>Я помогаю людям разобраться в себе, используя подход гештальт-терапии...</textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" disabled>Сохранить изменения</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-lock"></i> Безопасность
+                </h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('settings') }}" method="post" class="needs-validation" novalidate>
+                    <input type="hidden" name="form_type" value="security">
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i> Редактирование этих настроек будет доступно в следующей версии.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="session_timeout" class="form-label">Таймаут сессии (минуты)</label>
+                        <input type="number" class="form-control" id="session_timeout" name="session_timeout" value="30" min="5" max="120" disabled>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="enable_content_filter" name="enable_content_filter" checked disabled>
+                        <label class="form-check-label" for="enable_content_filter">Включить фильтрацию контента</label>
+                        <div class="form-text">Блокировать неприемлемый контент в сообщениях пользователей</div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="log_sensitive_data" name="log_sensitive_data" disabled>
+                        <label class="form-check-label" for="log_sensitive_data">Хранить чувствительные данные в логах</label>
+                        <div class="form-text">По умолчанию чувствительные данные маскируются в логах</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" disabled>Сохранить изменения</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

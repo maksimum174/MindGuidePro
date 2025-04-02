@@ -1,14 +1,8 @@
-# Этот файл содержит конфигурацию WSGI для Flask
-import sys
-import os
+"""
+Стартовый файл для веб-интерфейса
+"""
 
-# Добавляем путь к папке с проектом
-project_path = os.path.dirname(os.path.abspath(__file__))
-if project_path not in sys.path:
-    sys.path.append(project_path)
+from flask_web import app
 
-# Импорт приложения Flask для запуска через Gunicorn
-from app import app as application
-
-# Объявляем app для запуска через Gunicorn в main:app
-app = application
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000, debug=True)

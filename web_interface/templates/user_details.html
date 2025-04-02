@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Детали пользователя {{ user_id }} - Бесплатный ИИ-Психолог 24/7{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Панель управления</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Пользователь {{ user_id }}</li>
+            </ol>
+        </nav>
+        <h1 class="mb-4">Детали пользователя {{ user_id }}</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-circle"></i> Информация о пользователе
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>ID пользователя:</h6>
+                    <p class="text-muted">{{ user_id }}</p>
+                </div>
+                
+                {% if logs %}
+                <div class="mb-3">
+                    <h6>Первое взаимодействие:</h6>
+                    <p class="text-muted">{{ logs[-1]['timestamp'] }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Последнее взаимодействие:</h6>
+                    <p class="text-muted">{{ logs[0]['timestamp'] }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Общее количество взаимодействий:</h6>
+                    <p class="text-muted">{{ logs|length }}</p>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i> Нет данных о взаимодействиях с этим пользователем
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart"></i> Типы взаимодействий
+                </h5>
+            </div>
+            <div class="card-body">
+                {% set interaction_types = {} %}
+                {% for log in logs %}
+                    {% if log.type %}
+                        {% if log.type in interaction_types %}
+                            {% set _ = interaction_types.update({log.type: interaction_types[log.type] + 1}) %}
+                        {% else %}
+                            {% set _ = interaction_types.update({log.type: 1}) %}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if interaction_types %}
+                    <div class="list-group list-group-flush">
+                        {% for type, count in interaction_types.items() %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ type }}
+                                <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">Нет данных о типах взаимодействий</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-left-text"></i> История взаимодействий
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if logs %}
+                    <div class="accordion" id="logsAccordion">
+                        {% for log in logs %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading{{ loop.index }}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
+                                        <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                            <span>
+                                                <strong>{{ log.type|default('Сообщение') }}</strong>
+                                                {% if log.user_message %}
+                                                    - {{ log.user_message|truncate(40) }}
+                                                {% endif %}
+                                            </span>
+                                            <small class="text-muted">{{ log.timestamp }}</small>
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#logsAccordion">
+                                    <div class="accordion-body">
+                                        <div class="mb-3">
+                                            <h6>Сообщение пользователя:</h6>
+                                            <div class="p-3 bg-light rounded">
+                                                {{ log.user_message|default('Нет сообщения')|nl2br }}
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <h6>Ответ бота:</h6>
+                                            <div class="p-3 bg-light rounded">
+                                                {{ log.bot_response|default('Нет ответа')|nl2br }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i> Нет истории взаимодействий для этого пользователя
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
