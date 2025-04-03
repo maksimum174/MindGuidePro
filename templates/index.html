@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Крестики-Нолики</title>
+    <style>
+        :root {
+            --background-color: #ffffff;
+            --grid-color: #2C3E50;
+            --x-color: #E74C3C;
+            --o-color: #3498DB;
+            --text-color: #2C3E50;
+            --button-color: #ECF0F1;
+            --button-hover: #D0D3D4;
+        }
+        
+        body {
+            font-family: 'Roboto', 'Arial', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin: 0 0 10px;
+            color: var(--grid-color);
+        }
+        
+        .status {
+            font-size: 20px;
+            margin: 10px 0 20px;
+            height: 30px;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin: 0 auto 20px;
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1/1;
+        }
+        
+        .cell {
+            background-color: var(--button-color);
+            border: none;
+            border-radius: 8px;
+            font-size: 48px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .cell:hover {
+            background-color: var(--button-hover);
+        }
+        
+        .cell.x {
+            color: var(--x-color);
+        }
+        
+        .cell.o {
+            color: var(--o-color);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        
+        button {
+            background-color: var(--grid-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            flex: 1;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .game-over.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .game-over-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 90%;
+            width: 350px;
+        }
+        
+        .game-over h2 {
+            font-size: 28px;
+            margin-top: 0;
+        }
+        
+        .win-x {
+            color: var(--x-color);
+        }
+        
+        .win-o {
+            color: var(--o-color);
+        }
+        
+        .cell::after {
+            content: '';
+            display: block;
+            padding-bottom: 100%;
+        }
+        
+        .cell span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        /* Animations */
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .cell.animate {
+            animation: popIn 0.3s forwards;
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 500px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 28px;
+            }
+            
+            .status {
+                font-size: 18px;
+            }
+            
+            .board {
+                gap: 8px;
+            }
+            
+            .cell {
+                font-size: 36px;
+            }
+            
+            button {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Крестики-Нолики</h1>
+        <div class="status" id="status">Ход: Игрок X</div>
+        
+        <div class="board" id="board">
+            <button class="cell" data-index="0"><span></span></button>
+            <button class="cell" data-index="1"><span></span></button>
+            <button class="cell" data-index="2"><span></span></button>
+            <button class="cell" data-index="3"><span></span></button>
+            <button class="cell" data-index="4"><span></span></button>
+            <button class="cell" data-index="5"><span></span></button>
+            <button class="cell" data-index="6"><span></span></button>
+            <button class="cell" data-index="7"><span></span></button>
+            <button class="cell" data-index="8"><span></span></button>
+        </div>
+        
+        <div class="controls">
+            <button id="newGameBtn">Новая игра</button>
+            <button id="toggleAIBtn">Против ИИ: Вкл</button>
+        </div>
+    </div>
+    
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2 id="gameOverText">Игрок X победил!</h2>
+            <button id="playAgainBtn">Играть снова</button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const boardElement = document.getElementById('board');
+            const cells = document.querySelectorAll('.cell');
+            const statusElement = document.getElementById('status');
+            const newGameBtn = document.getElementById('newGameBtn');
+            const toggleAIBtn = document.getElementById('toggleAIBtn');
+            const gameOverElement = document.getElementById('gameOver');
+            const gameOverTextElement = document.getElementById('gameOverText');
+            const playAgainBtn = document.getElementById('playAgainBtn');
+            
+            let game;
+            let vsAI = true;
+            
+            // Инициализация игры
+            initGame();
+            
+            // Обработчики событий
+            boardElement.addEventListener('click', handleCellClick);
+            newGameBtn.addEventListener('click', resetGame);
+            toggleAIBtn.addEventListener('click', toggleAI);
+            playAgainBtn.addEventListener('click', () => {
+                gameOverElement.classList.remove('show');
+                resetGame();
+            });
+            
+            // Инициализация игры из состояния на сервере
+            function initGame() {
+                fetch('/api/state')
+                    .then(response => response.json())
+                    .then(data => {
+                        game = data.game;
+                        vsAI = data.vsAI;
+                        updateToggleAIButton();
+                        updateBoard();
+                    })
+                    .catch(error => console.error('Error fetching game state:', error));
+            }
+            
+            // Обработка клика по ячейке
+            function handleCellClick(event) {
+                const cell = event.target.closest('.cell');
+                if (!cell || game.gameOver) return;
+                
+                const index = parseInt(cell.dataset.index);
+                
+                // Проверка на валидность хода
+                if (game.board[index] !== ' ') return;
+                
+                makeMove(index);
+            }
+            
+            // Выполнение хода
+            function makeMove(position) {
+                fetch('/api/move', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ position })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        game = data.game;
+                        vsAI = data.vsAI;
+                        updateBoard();
+                    })
+                    .catch(error => console.error('Error making move:', error));
+            }
+            
+            // Обновление отображения игровой доски
+            function updateBoard() {
+                // Обновляем ячейки
+                cells.forEach((cell, index) => {
+                    const span = cell.querySelector('span');
+                    const value = game.board[index];
+                    
+                    if (value !== ' ') {
+                        span.textContent = value;
+                        cell.classList.add(value.toLowerCase());
+                    } else {
+                        span.textContent = '';
+                        cell.classList.remove('x', 'o');
+                    }
+                });
+                
+                // Обновляем статус
+                if (game.gameOver) {
+                    if (game.winner) {
+                        statusElement.textContent = `Игрок ${game.winner} победил!`;
+                        showGameOver(`Игрок ${game.winner} победил!`, game.winner);
+                    } else {
+                        statusElement.textContent = 'Ничья!';
+                        showGameOver('Ничья!');
+                    }
+                } else {
+                    statusElement.textContent = `Ход: Игрок ${game.currentPlayer}`;
+                }
+            }
+            
+            // Сброс игры
+            function resetGame() {
+                fetch('/api/reset', {
+                    method: 'POST'
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        game = data.game;
+                        vsAI = data.vsAI;
+                        updateBoard();
+                    })
+                    .catch(error => console.error('Error resetting game:', error));
+            }
+            
+            // Переключение режима игры с ИИ
+            function toggleAI() {
+                fetch('/api/toggle-ai', {
+                    method: 'POST'
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        game = data.game;
+                        vsAI = data.vsAI;
+                        updateToggleAIButton();
+                        updateBoard();
+                    })
+                    .catch(error => console.error('Error toggling AI:', error));
+            }
+            
+            // Обновление кнопки переключения ИИ
+            function updateToggleAIButton() {
+                toggleAIBtn.textContent = `Против ИИ: ${vsAI ? 'Вкл' : 'Выкл'}`;
+            }
+            
+            // Показать уведомление о конце игры
+            function showGameOver(message, winner) {
+                gameOverTextElement.textContent = message;
+                gameOverTextElement.className = '';
+                
+                if (winner) {
+                    gameOverTextElement.classList.add(winner === 'X' ? 'win-x' : 'win-o');
+                }
+                
+                gameOverElement.classList.add('show');
+            }
+        });
+    </script>
+</body>
+</html>

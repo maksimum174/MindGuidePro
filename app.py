@@ -1,292 +1,247 @@
-import os
-import subprocess
-import time
-import threading
-import signal
-from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
-from dotenv import load_dotenv
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Веб-интерфейс для игры Крестики-Нолики
+"""
 
-# Загрузка переменных окружения
-load_dotenv()
+import os
+import flask
+from flask import Flask, render_template, request, jsonify, session
+import random
+import json
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "psihelpbot_secret_key")
+app.secret_key = os.environ.get("SESSION_SECRET", "default-secret-key")
 
-# Переменная для хранения процесса бота
-bot_process = None
-bot_status = {
-    "running": False,
-    "start_time": None,
-    "uptime": "Не запущен"
-}
-
-def update_uptime():
-    """Обновляет информацию об uptime бота"""
-    while bot_status["running"]:
-        if bot_status["start_time"]:
-            elapsed = time.time() - bot_status["start_time"]
-            hours, remainder = divmod(int(elapsed), 3600)
-            minutes, seconds = divmod(remainder, 60)
-            bot_status["uptime"] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-        time.sleep(1)
-
-def start_bot():
-    """Запускает процесс телеграм-бота"""
-    global bot_process
-    global bot_status
+class TicTacToeGame:
+    """Простая игра Крестики-Нолики."""
     
-    if bot_process is not None:
-        return False
+    def __init__(self):
+        """Инициализация игры."""
+        self.board = [' ' for _ in range(9)]
+        self.current_player = 'X'
+        self.game_over = False
+        self.winner = None
+
+    def to_json(self):
+        """Конвертирует состояние игры в JSON."""
+        return {
+            'board': self.board,
+            'currentPlayer': self.current_player,
+            'gameOver': self.game_over,
+            'winner': self.winner
+        }
+    
+    @staticmethod
+    def from_json(data):
+        """Создает игру из JSON данных."""
+        game = TicTacToeGame()
+        game.board = data['board']
+        game.current_player = data['currentPlayer']
+        game.game_over = data['gameOver']
+        game.winner = data['winner']
+        return game
+
+    def make_move(self, position):
+        """Сделать ход."""
+        if position < 0 or position > 8:
+            return False
         
-    try:
-        # Запуск бота с перенаправлением вывода в файл
-        log_file = open("bot.log", "a")
-        bot_process = subprocess.Popen(
-            ["python", "main.py"], 
-            stdout=log_file,
-            stderr=log_file,
-            preexec_fn=os.setsid
-        )
+        if self.board[position] != ' ' or self.game_over:
+            return False
         
-        # Обновление статуса
-        bot_status["running"] = True
-        bot_status["start_time"] = time.time()
+        self.board[position] = self.current_player
+        self.check_game_over()
         
-        # Запуск обновления времени работы
-        threading.Thread(target=update_uptime, daemon=True).start()
+        if not self.game_over:
+            self.switch_player()
         
         return True
-    except Exception as e:
-        print(f"Ошибка запуска бота: {e}")
+
+    def switch_player(self):
+        """Переключить текущего игрока."""
+        self.current_player = 'O' if self.current_player == 'X' else 'X'
+
+    def check_game_over(self):
+        """Проверка на завершение игры."""
+        # Проверка строк
+        for i in range(0, 9, 3):
+            if self.board[i] != ' ' and self.board[i] == self.board[i+1] == self.board[i+2]:
+                self.game_over = True
+                self.winner = self.board[i]
+                return
+        
+        # Проверка столбцов
+        for i in range(3):
+            if self.board[i] != ' ' and self.board[i] == self.board[i+3] == self.board[i+6]:
+                self.game_over = True
+                self.winner = self.board[i]
+                return
+        
+        # Проверка диагоналей
+        if self.board[0] != ' ' and self.board[0] == self.board[4] == self.board[8]:
+            self.game_over = True
+            self.winner = self.board[0]
+            return
+        
+        if self.board[2] != ' ' and self.board[2] == self.board[4] == self.board[6]:
+            self.game_over = True
+            self.winner = self.board[2]
+            return
+        
+        # Проверка на ничью
+        if ' ' not in self.board:
+            self.game_over = True
+            self.winner = None
+            return
+
+    def ai_move(self):
+        """ИИ делает ход."""
+        # Проверка на выигрышный ход
+        for i in range(9):
+            if self.board[i] == ' ':
+                self.board[i] = 'O'
+                if self.check_win('O'):
+                    self.board[i] = ' '
+                    return i
+                self.board[i] = ' '
+        
+        # Проверка на блокирующий ход
+        for i in range(9):
+            if self.board[i] == ' ':
+                self.board[i] = 'X'
+                if self.check_win('X'):
+                    self.board[i] = ' '
+                    return i
+                self.board[i] = ' '
+        
+        # Центр
+        if self.board[4] == ' ':
+            return 4
+        
+        # Углы
+        corners = [0, 2, 6, 8]
+        empty_corners = [c for c in corners if self.board[c] == ' ']
+        if empty_corners:
+            return random.choice(empty_corners)
+        
+        # Стороны
+        sides = [1, 3, 5, 7]
+        empty_sides = [s for s in sides if self.board[s] == ' ']
+        if empty_sides:
+            return random.choice(empty_sides)
+        
+        return None
+
+    def check_win(self, player):
+        """Проверка на победу для указанного игрока."""
+        # Проверка строк
+        for i in range(0, 9, 3):
+            if self.board[i] == self.board[i+1] == self.board[i+2] == player:
+                return True
+        
+        # Проверка столбцов
+        for i in range(3):
+            if self.board[i] == self.board[i+3] == self.board[i+6] == player:
+                return True
+        
+        # Проверка диагоналей
+        if self.board[0] == self.board[4] == self.board[8] == player:
+            return True
+        
+        if self.board[2] == self.board[4] == self.board[6] == player:
+            return True
+        
         return False
 
-def stop_bot():
-    """Останавливает процесс телеграм-бота"""
-    global bot_process
-    global bot_status
-    
-    if bot_process is None:
-        return False
-        
-    try:
-        # Отправляем сигнал завершения группе процессов
-        os.killpg(os.getpgid(bot_process.pid), signal.SIGTERM)
-        bot_process.wait(timeout=5)  # Ожидаем завершения процесса
-        bot_process = None
-        
-        # Обновление статуса
-        bot_status["running"] = False
-        bot_status["uptime"] = "Не запущен"
-        
-        return True
-    except Exception as e:
-        print(f"Ошибка остановки бота: {e}")
-        return False
+    def reset(self):
+        """Сброс игры."""
+        self.board = [' ' for _ in range(9)]
+        self.current_player = 'X'
+        self.game_over = False
+        self.winner = None
 
-def restart_bot():
-    """Перезапускает процесс телеграм-бота"""
-    if stop_bot():
-        time.sleep(2)  # Даем время на корректное завершение
-        return start_bot()
-    return False
 
-def check_bot_running():
-    """Проверяет, запущен ли бот"""
-    global bot_process
-    
-    if bot_process is None:
-        return False
-        
-    # Проверяем, работает ли процесс
-    if bot_process.poll() is not None:
-        # Процесс завершился
-        bot_process = None
-        bot_status["running"] = False
-        bot_status["uptime"] = "Не запущен"
-        return False
-        
-    return True
-
-@app.route('/', methods=['GET'])
+@app.route('/')
 def home():
-    """Главная страница панели управления"""
-    # Проверяем статус бота
-    is_running = check_bot_running()
+    """Домашняя страница с игрой."""
+    # Создаем новую игру, если нет активной
+    if 'game' not in session:
+        session['game'] = json.dumps(TicTacToeGame().to_json())
+        session['vs_ai'] = True
     
-    return f"""
-    <html>
-        <head>
-            <title>Психологический бот - Панель управления</title>
-            <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <script>
-                // Функция для обновления статуса бота каждые 5 секунд
-                function updateStatus() {{
-                    fetch('/status')
-                        .then(response => response.json())
-                        .then(data => {{
-                            const statusElement = document.getElementById('bot-status');
-                            const uptimeElement = document.getElementById('bot-uptime');
-                            
-                            if (data.running) {{
-                                statusElement.innerHTML = '<span class="badge bg-success">Активен</span>';
-                                uptimeElement.textContent = data.uptime;
-                            }} else {{
-                                statusElement.innerHTML = '<span class="badge bg-danger">Не активен</span>';
-                                uptimeElement.textContent = 'Не запущен';
-                            }}
-                        }});
-                }}
-                
-                // Запускаем обновление статуса каждые 5 секунд
-                setInterval(updateStatus, 5000);
-                
-                // Обновляем статус при загрузке страницы
-                document.addEventListener('DOMContentLoaded', updateStatus);
-            </script>
-        </head>
-        <body data-bs-theme="dark">
-            <div class="container mt-5">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h1 class="card-title">Психологический бот - Панель управления</h1>
-                            </div>
-                            <div class="card-body">
-                                <div class="card mb-4">
-                                    <div class="card-header">
-                                        <h3>Статус бота</h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-4">
-                                                <p><strong>Состояние:</strong> <span id="bot-status">
-                                                    {'<span class="badge bg-success">Активен</span>' if is_running else '<span class="badge bg-danger">Не активен</span>'}
-                                                </span></p>
-                                                <p><strong>Время работы:</strong> <span id="bot-uptime">{bot_status['uptime']}</span></p>
-                                            </div>
-                                            <div class="col-md-8">
-                                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                                    <a href="/start" class="btn btn-success me-md-2 {'disabled' if is_running else ''}">
-                                                        <i class="bi bi-play-fill"></i> Запустить
-                                                    </a>
-                                                    <a href="/stop" class="btn btn-danger me-md-2 {'disabled' if not is_running else ''}">
-                                                        <i class="bi bi-stop-fill"></i> Остановить
-                                                    </a>
-                                                    <a href="/restart" class="btn btn-warning {'disabled' if not is_running else ''}">
-                                                        <i class="bi bi-arrow-clockwise"></i> Перезапустить
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <h2>Как использовать бота</h2>
-                                <p>Найдите бота в Telegram по имени <code>@psi_help24_bot</code> и отправьте команду <code>/start</code>.</p>
-                                
-                                <h2>Команды бота:</h2>
-                                <ul class="list-group mb-4">
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        /start
-                                        <span class="badge bg-primary rounded-pill">Начать диалог</span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        /help
-                                        <span class="badge bg-primary rounded-pill">Получить помощь</span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        /reset
-                                        <span class="badge bg-primary rounded-pill">Сбросить контекст</span>
-                                    </li>
-                                </ul>
-                                
-                                <div class="card mb-4">
-                                    <div class="card-header">
-                                        <h3>Информация о боте</h3>
-                                    </div>
-                                    <div class="card-body">
-                                        <p>Бот психологической поддержки, разработанный с использованием Gemini AI и специализированный для русскоязычной аудитории.</p>
-                                        <p>Проект предоставляет персонализированную психологическую помощь через современные коммуникационные технологии.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-footer text-muted">
-                                &copy; 2025 Психологический бот на базе Gemini AI
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </body>
-    </html>
-    """
+    return render_template('index.html')
 
-@app.route('/status', methods=['GET'])
-def status():
-    """Возвращает текущий статус бота в формате JSON"""
-    is_running = check_bot_running()
+
+@app.route('/api/state')
+def get_state():
+    """Получить текущее состояние игры."""
+    if 'game' not in session:
+        session['game'] = json.dumps(TicTacToeGame().to_json())
+    
+    game_data = json.loads(session['game'])
     return jsonify({
-        "running": is_running,
-        "uptime": bot_status["uptime"] if is_running else "Не запущен"
+        'game': game_data,
+        'vsAI': session.get('vs_ai', True)
     })
 
-@app.route('/start', methods=['GET'])
-def start():
-    """Запускает бота"""
-    if not check_bot_running():
-        if start_bot():
-            flash("Бот успешно запущен", "success")
-        else:
-            flash("Ошибка при запуске бота", "danger")
-    else:
-        flash("Бот уже запущен", "warning")
-    return redirect(url_for('home'))
 
-@app.route('/stop', methods=['GET'])
-def stop():
-    """Останавливает бота"""
-    if check_bot_running():
-        if stop_bot():
-            flash("Бот успешно остановлен", "success")
-        else:
-            flash("Ошибка при остановке бота", "danger")
-    else:
-        flash("Бот не запущен", "warning")
-    return redirect(url_for('home'))
+@app.route('/api/move', methods=['POST'])
+def make_move():
+    """Сделать ход."""
+    if 'game' not in session:
+        return jsonify({'error': 'No active game'}), 400
+    
+    data = request.json
+    position = data.get('position')
+    
+    if position is None:
+        return jsonify({'error': 'No position provided'}), 400
+    
+    game = TicTacToeGame.from_json(json.loads(session['game']))
+    vs_ai = session.get('vs_ai', True)
+    
+    if game.make_move(position):
+        # Если игра с ИИ и ход ИИ
+        if vs_ai and not game.game_over and game.current_player == 'O':
+            ai_position = game.ai_move()
+            if ai_position is not None:
+                game.make_move(ai_position)
+    
+    session['game'] = json.dumps(game.to_json())
+    
+    return jsonify({
+        'game': game.to_json(),
+        'vsAI': vs_ai
+    })
 
-@app.route('/restart', methods=['GET'])
-def restart():
-    """Перезапускает бота"""
-    if check_bot_running():
-        if restart_bot():
-            flash("Бот успешно перезапущен", "success")
-        else:
-            flash("Ошибка при перезапуске бота", "danger")
-    else:
-        flash("Бот не запущен, запускаем...", "warning")
-        start_bot()
-    return redirect(url_for('home'))
 
-@app.route('/ping', methods=['GET'])
-def ping():
-    """Проверка работоспособности сервера"""
-    return "pong"
+@app.route('/api/reset', methods=['POST'])
+def reset_game():
+    """Сбросить игру."""
+    game = TicTacToeGame()
+    session['game'] = json.dumps(game.to_json())
+    
+    return jsonify({
+        'game': game.to_json(),
+        'vsAI': session.get('vs_ai', True)
+    })
 
-# Автоматический запуск бота при запуске сервера
-def initialize_bot():
-    """Инициализирует бота при первом запросе к серверу"""
-    if not check_bot_running():
-        start_bot()
 
-# Регистрируем функцию, которая будет вызываться при первом запросе
-@app.route('/initialize', methods=['GET'])
-def handle_initialize():
-    """Эндпоинт для инициализации бота"""
-    initialize_bot()
-    return redirect(url_for('home'))
+@app.route('/api/toggle-ai', methods=['POST'])
+def toggle_ai():
+    """Переключить режим игры с ИИ."""
+    session['vs_ai'] = not session.get('vs_ai', True)
+    
+    # Сбросить игру после переключения режима
+    game = TicTacToeGame()
+    session['game'] = json.dumps(game.to_json())
+    
+    return jsonify({
+        'game': game.to_json(),
+        'vsAI': session.get('vs_ai', True)
+    })
+
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
